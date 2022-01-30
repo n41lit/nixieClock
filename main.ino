@@ -1,5 +1,5 @@
 // First we include the libraries
-#include <Wire.h>
+//#include <Wire.h> activate for Arduino
 
 //Pin connected to SH_CP of 74HC595 - pin 11 on ic
 int ClockPin = 2;
