@@ -18,6 +18,8 @@ int MinusPin = A2;
 //pointer
 byte * registerPattern;
 
+int test = 0;
+
 
 void setup() {
   
