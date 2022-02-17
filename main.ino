@@ -7,6 +7,17 @@ int ClockPin = 2;
 int LatchPin = 3;
 //Pin connected to DS of 74HC595 - pin 14 on ic
 int DataPin = 4;
+//Pin connected to LED
+int ledRPin = 5;
+int ledGPin = 6;
+int ledBPin = 7;
+//Pin connected to Switch 1
+int switchOnePin = 11;
+//Pin connected to Switch 2
+int switchTwoPin = 12;
+//Pin connected to Buzzer
+int buzzerPin = 13;
+
 
 int PlusPin = A1;
 int MinusPin = A2;
@@ -18,7 +29,8 @@ int MinusPin = A2;
 //pointer
 byte * registerPattern;
 
-int test = 0;
+//define Alarmvar
+long AlarmTime = 0;
 
 
 void setup() {
@@ -30,7 +42,12 @@ void setup() {
     pinMode(DataPin, OUTPUT);
     pinMode(ClockPin, OUTPUT);
     pinMode(LatchPin, OUTPUT);
-
+    pinMode(switchOne, INPUT);
+    pinMode(switchTwo, INPUT);
+    pinMode(buzzerPin, OUTPUT);
+    pinMode(ledRPin, OUTPUT);
+    pinMode(ledRPin, OUTPUT);
+    pinMode(ledRPin, OUTPUT);
 
     //Create Array of bites for all registers
     registerPattern = new byte[REGISTERS];
@@ -45,9 +62,10 @@ void setup() {
 void handleFail(long FaliureCode){
 
     Serial.println(FaliureCode);
+    notifyUser(1);
 
     FaliureCode= FaliureCode*10 + 9;
-    convertToByte(FaliureCode);
+    sendToClock(FaliureCode);
 }
 
 void clearRegisters(){
@@ -114,7 +132,7 @@ void checkDigits(){
 }
 
 //convert a seven digit number to bytecode, 6 Digits, 1 X
-void convertToByte(long number){
+void sendToClock(long number){
 
     byte sendBytes[] = {0};
     int firstDigits = number/100000;
@@ -157,7 +175,7 @@ void convertToByte(long number){
     }
     
     else{ 
-        handleFail(900001);
+        handleFail(900002);
     }
 }
 
@@ -166,16 +184,54 @@ void Timer(int time){
 
 }
 
-//alarm function
-void Alarm(long time){
+//alarm functions
 
+void getAlarm(){
+    
+}
+
+void setAlarm(long time){
+
+}
+
+//notify user
+
+void notifyUser(int type){
+    //types 0: info (short) 1: warn (long) 2: error (until solved) 3: alarm (until reset/button)
+    if(type=0){
+        digitalWrite(buzzerPin, HIGH);
+        delay(500);
+        digitalWrite(buzzerPin, LOW);
+    }
+    else if(type=1){
+        digitalWrite(buzzerPin, HIGH);
+        delay(5000);
+        digitalWrite(buzzerPin, LOW);
+    }
+    else if (type = 2)
+    {
+        /* code */
+    }
+    else if (type = 3)
+    {
+        for (size_t i = 0; i < 10000; i++)
+        {
+        digitalWrite(buzzerPin, HIGH);
+        delay(1000);
+        digitalWrite(buzzerPin, LOW);
+        delay(1000);
+        }
+        
+    }
+    
+    
 }
 
 
 //MAIN LOOP
 void loop() {
 
-    convertToByte(4544122);
+    sendToClock(4544122);
 
     delay(10000);
 }
@@ -204,4 +260,3 @@ void loop() {
 // 128-137= 80 - 89
 // 144-153= 90 - 99
 
-//1313135
