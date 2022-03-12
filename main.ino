@@ -24,6 +24,7 @@ int UsEchPin = 12;
 
 #include <Wire.h>
 #include "RTClib.h"
+#include <Adafruit_BME280.h>
 RTC_DS1307 rtc;
 Adafruit_BME280 bme;
 
@@ -49,7 +50,7 @@ void setup() {
 
     Serial.println("Starting Test Sequence:");
 
-    Serial.println("Test-Block #0 - Setup")
+    Serial.println("Test-Block #0 - Setup");
 
     Serial.println("Test-Block #0.1 - Setting Up...");
     registerPattern = new byte[REGISTERS];
@@ -66,28 +67,28 @@ void setup() {
     pinMode(ledBPin, OUTPUT);
     pinMode(switchOne, INPUT);
     pinMode(switchTwo, INPUT);
-    pinmode(buzzerPin, OUTPUT);
-    pinmode(UsTrgPin, OUTPUT);
-    pinmode(UsEchPin, INPUT);
+    pinMode(buzzerPin, OUTPUT);
+    pinMode(UsTrgPin, OUTPUT);
+    pinMode(UsEchPin, INPUT);
 
     Serial.println("Pins enabled...");
 
-    Serial.println("Test-Block #0 - Setup done")
+    Serial.println("Test-Block #0 - Setup done");
 
-    Serial.println("Test-Block #1 - External Sensory")
+    Serial.println("Test-Block #1 - External Sensory");
 
     Serial.println("Test-Block #1.1 - Testing LED...");
-    Serial.println("Red...")
+    Serial.println("Red...");
     digitalWrite(ledRPin, HIGH);
     delay(1000);
     digitalWrite(ledRPin, LOW);
     delay(1000);
-    Serial.println("Green...")
+    Serial.println("Green...");
     digitalWrite(ledGPin, HIGH);
     delay(1000);
     digitalWrite(ledGPin, LOW);
     delay(1000);
-    Serial.println("Blue...")
+    Serial.println("Blue...");
     digitalWrite(ledBPin, HIGH);
     delay(1000);
     digitalWrite(ledBPin, LOW);
@@ -97,7 +98,7 @@ void setup() {
     long duration;
     int distance;
 
-    Serial.println("Taking Distance in 1 Second...")
+    Serial.println("Taking Distance in 1 Second...");
     digitalWrite(UsTrgPin, LOW);
     delayMicroseconds(2);
     digitalWrite(UsTrgPin, HIGH);
@@ -127,7 +128,7 @@ void setup() {
     Serial.println("Button 2 pressed...");
     
     Serial.println("Press both buttons for 2 sec...");
-    while (pulseIn(switchOne) <= buttonTime && pulseIn(switchTwo) <= buttonTime)
+    while (pulseIn(switchOne, HIGH) <= buttonTime && pulseIn(switchTwo, HIGH) <= buttonTime)
     {
         ;
     }
@@ -148,10 +149,14 @@ void setup() {
         Serial.println("BME280 not found");
         while (1);
     }
-    Serial.println("Pressure:" + bme.readPressure());
-    Serial.println("Temperature:" + bme.readTemperature());    
-    Serial.println("Humidity:" + bme.readHumidity());
-    Serial.println("Altitude(calc):"+ bme.readAltitude(1013));
+    Serial.print("Pressure:");
+    Serial.print(bme.readPressure());
+    Serial.print("Temperature:");
+    Serial.print(bme.readTemperature());    
+    Serial.print("Humidity:");
+    Serial.print(bme.readHumidity());
+    Serial.print("Altitude(calc):");
+    Serial.print(bme.readAltitude(1013));
 
     Serial.println("Test-Block #2.2 - DS1307 Test"); 
     Wire.begin();
@@ -176,17 +181,23 @@ void setup() {
     Serial.print(now.second(), DEC); 
     Serial.println();
 
-    Serial.println("Test-Block #2 - Internal Sensory done")
+    Serial.println("Test-Block #2 - Internal Sensory done");
 
-    Serial.println("Test-Block #3 - Nixie-Tubes")
+    Serial.println("Test-Block #3 - Nixie-Tubes");
 
-    Serial.println("Check Digits...")
+    Serial.println("Check Digits...");
 
     checkDigits();
 
     Serial.println("Hope all digits were in order :-)");
 
-    Serial.println("Test-Block #3 - Nixie-Tubes done")
+    Serial.println("Test-Block #3 - Nixie-Tubes done");
+}
+
+void clearRegisters(){
+    for (size_t i=0; i < REGISTERS; i++){
+        registerPattern[i] = 0;
+    }
 }
 
 void writeToShiftRegisters() {
@@ -244,37 +255,8 @@ void checkDigits() {
   clearRegisters();
 }
 
-
 //MAIN LOOP
 void loop() {
-
-    convertToByte(4544122);
-
+    Serial.println("completed. Restart or unplug...");
     delay(10000);
 }
-
-// 0000 0000 0000 0000 0000 0000 0000
-// hhhh hhhh mmmm mmmm ssss ssss xxxx
-//
-// 1 0000 0001
-// 2 0000 0010
-// 3 0000 0011
-// 4 0000 0100
-// 5 0000 0101
-// 6 0000 0110
-// 7 0000 0111
-// 8 0000 1000
-// 9 0000 1001
-
-// 1-9 = 1-9
-// 16-25 =  10-19
-// 32-41= 20 - 29
-// 48-57 = 30 - 39
-// 64-73= 40 - 49
-// 80-89= 50 - 59
-// 96-105 = 60 - 69
-// 112-121= 70 - 79
-// 128-137= 80 - 89
-// 144-153= 90 - 99
-
-//1313135
