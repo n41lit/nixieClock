@@ -71,6 +71,9 @@ void setup() {
     pinMode(UsTrgPin, OUTPUT);
     pinMode(UsEchPin, INPUT);
 
+    digitalWrite(MrPin, HIGH);
+    digitalWrite(OePin, LOW);
+
     Serial.println("Pins enabled...");
 
     Serial.println("Test-Block #0 - Setup done");
