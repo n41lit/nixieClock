@@ -147,44 +147,7 @@ void setup() {
 
     Serial.println("Test-Block #2 - Internal Sensory");
 
-    Serial.println("Test-Block #2.1 - BME280 Test");
-    if (!bme.begin()) {
-        Serial.println("BME280 not found");
-        while (1);
-    }
-    Serial.print("Pressure:");
-    Serial.print(bme.readPressure());
-    Serial.print("Temperature:");
-    Serial.print(bme.readTemperature());    
-    Serial.print("Humidity:");
-    Serial.print(bme.readHumidity());
-    Serial.print("Altitude(calc):");
-    Serial.print(bme.readAltitude(1013));
-
-    Serial.println("Test-Block #2.2 - DS1307 Test"); 
-    Wire.begin();
-    rtc.begin();
-    if (! rtc.isrunning()){
-        Serial.println("RTC Time not running...");
-        Serial.println("Setting to compiler time...");
-        rtc.adjust(DateTime(__DATE__,__TIME__));
-    }
-    DateTime now = rtc.now();
-    Serial.println("Time from RTC:");
-    Serial.print(now.day(), DEC);
-    Serial.print("/");
-    Serial.print(now.month(), DEC);
-    Serial.print("/");
-    Serial.print(now.year(), DEC);
-    Serial.print("");
-    Serial.print(now.hour(), DEC);
-    Serial.print(":");
-    Serial.print(now.minute(), DEC);
-    Serial.print(":");
-    Serial.print(now.second(), DEC); 
-    Serial.println();
-
-    Serial.println("Test-Block #2 - Internal Sensory done");
+    
 
     Serial.println("Test-Block #3 - Nixie-Tubes");
 
@@ -209,6 +172,13 @@ void writeToShiftRegisters() {
   //Go through stored patterns and write them in order
   for (size_t i = 0; i < REGISTERS; i++) {
 
+    if(i < 4) {
+      byte a = registerPattern[i];
+      byte b = a << 4;
+      byte c = a >> 4;
+      byte switchedPattern = b | c;
+      registerPattern[i] = switchedPattern;
+      }
     byte * pattern = &registerPattern[i];
 
     shiftOut(DataPin, ClockPin, MSBFIRST, *pattern);
@@ -257,9 +227,48 @@ void checkDigits() {
   }
   clearRegisters();
 }
+void sendToClock(long number){
+
+    byte sendBytes[] = {0b00000000, 0b00000000, 0b00000000, 0b00000000};
+    int firstDigits = number/100000;
+    int secondDigits = number/1000%100;
+    int thirdDigits = number/10 % 100;
+    int lastDigit = number % 10;
+
+        int nr = firstDigits/10;
+        firstDigits = nr*6+firstDigits;
+        Serial.println(firstDigits, BIN);
+
+        nr = 0;
+
+        nr = secondDigits/10;
+        secondDigits = nr*6+secondDigits;
+
+        nr = 0;
+
+        nr = thirdDigits/10;
+        thirdDigits = nr*6+thirdDigits;
+
+        byte bLastDigit = byte(lastDigit) << 4;
+        bLastDigit = bLastDigit | 0b00001111;
+
+        sendBytes[3]= byte(firstDigits);
+        sendBytes[2]= byte(secondDigits);
+        sendBytes[1]= byte(thirdDigits);
+        sendBytes[0]= bLastDigit;
+
+        for(int i = 0; i < 4; i++){
+            Serial.println(sendBytes[i], BIN);
+            registerPattern[i]= sendBytes[i];
+            Serial.println(registerPattern[i], BIN);
+        }
+        writeToShiftRegisters();
+
+}
 
 //MAIN LOOP
 void loop() {
+    sendToClock(6904200);
     Serial.println("completed. Restart or unplug...");
     delay(10000);
 }
