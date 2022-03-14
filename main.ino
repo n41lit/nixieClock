@@ -27,6 +27,9 @@ Adafruit_BME280 bme;
 #define REGISTERS 4
 #define PINS REGISTERS * 8
 
+int nowPage;
+int alarmTime;
+
 //pointer
 byte * registerPattern;
 
@@ -77,6 +80,8 @@ void setup() {
   //Check digits for cathode poisoning
   checkDigits();
 
+  nowPage = 0;
+
 }
 
 //Give out a code for the user to see the failiure and print to serial
@@ -122,13 +127,13 @@ void writeToShiftRegisters() {
   //Go through stored patterns and write them in order
   for (size_t i = 0; i < REGISTERS; i++) {
 
-    if(i < 4) {
+    if (i < 4) {
       byte a = registerPattern[i];
       byte b = a << 4;
       byte c = a >> 4;
       byte switchedPattern = b | c;
       registerPattern[i] = switchedPattern;
-      }
+    }
     byte * pattern = &registerPattern[i];
 
     shiftOut(DataPin, ClockPin, MSBFIRST, *pattern);
@@ -146,16 +151,15 @@ void checkDigits() {
       byte y = byte(x);
       registerPattern[i] = y;
       writeToShiftRegisters();
-      delay(200);
+      delay(50);
     }
     for (x = 0; x < 10; x++) {
       byte y = byte(x);
       y = y << 4;
       registerPattern[i] = y;
       writeToShiftRegisters();
-      delay(200);
+      delay(50);
     }
-    delay(200);
   }
   clearRegisters();
 }
@@ -239,9 +243,39 @@ void notifyUser(int type) {
     }
 
   }
+}
 
+unsigned long userInputTime() {
+  int userTime[2];
+  long timeResult = 0;
+  int c = 0; 
+  while (c < 2)
+  {
+    if (digitalRead(switchOne) == HIGH)
+    {
+      userTime[c] += 1;
+      if (userTime[c] == 60)
+      {
+        userTime[c] = 0;
+      }
+    }
+
+    if (digitalRead(switchTwo) == HIGH)
+    {
+      c += 1;
+    }
+
+    //print the userTime
+    delay (70);
+    timeResult = (userTime[0] * 100000) + (userTime[1] * 1000) + (userTime[2] * 10);
+    sendToClock(timeResult);
+  }
+
+  return timeResult;
 
 }
+
+
 
 //function to Display Time
 void displayTime() {
@@ -251,15 +285,66 @@ void displayTime() {
   int secondNow = now.second();
   long timeNow = 0;
   timeNow = (hourNow * 100000) + (minuteNow * 1000) + (secondNow * 10);
+  //Serial.println(timeNow);
   sendToClock(timeNow);
+}
+
+void timer () {
+  int a;
+  a = userInputTime();
+  sendToClock(a);
+}
+
+void settingsLoop() {
+}
+
+void setAlarm() {
+
+}
+
+void displayAlarm() {
+
 }
 
 //MAIN LOOP
 void loop() {
-  
-  displayTime();
 
-  delay(100);
+  //detect input from switchTwo and set to next page
+  if (digitalRead(switchTwo) == HIGH) {
+    nowPage += 1;
+    if (nowPage > 5) {
+      nowPage = 0;
+    }
+  }
+
+  //page to function
+  if (nowPage == 0)
+  {
+    displayTime();
+  }
+  if (nowPage == 1)
+  {
+    timer();
+    sendToClock(0000001);
+  }
+  if (nowPage == 2)
+  {
+    sendToClock(2222220);
+  }
+  if (nowPage == 3)
+  {
+    sendToClock(3333330);
+  }
+  if (nowPage == 4)
+  {
+    sendToClock(4444440);
+  }
+  if (nowPage == 5)
+  {
+    sendToClock(5555550);
+  }
+
+  delay(200);
 }
 
 // 0000 0000 0000 0000 0000 0000 0000
