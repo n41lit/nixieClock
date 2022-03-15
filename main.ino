@@ -29,7 +29,7 @@ Adafruit_BME280 bme;
 
 int nowPage;
 long alarmTime;
-long timerTime;
+//DateTime timerTime;
 bool settingK; //setting for Kelvin (true)
 int settingMode;
 int settingDistance; //setting for distance
@@ -210,12 +210,12 @@ void sendToClock(long number) {
 }
 
 void sendBlankToClock() {
-  //blank the clock
-  byte sendBytes[] {0b11111111, 0b11111111, 0b11111111, 0b11111111};
+
 
   for (int i = 0; i < 4; i++) {
-    registerPattern[i] = sendBytes[i];
+    registerPattern[i] = 0b11111111;
   }
+  
 
   writeToShiftRegisters();
 }
@@ -234,7 +234,7 @@ void notifyUser(int type) {
   }
   else if (type = 3)
   {
-    bool t;
+    bool t = false;
     while (t = true)
     {
       tone(buzzerPin, 523, 1000);
@@ -247,69 +247,54 @@ void notifyUser(int type) {
   }
 }
 
-int userInputTime(int userTime[]) {
-  userTime[2];
-  long timeResult = 0;
+unsigned long userInputTimeFormatted() {
+  long arr[] = {0,0,0};
+  unsigned long timeResult = 0;
   int c = 0;
-  while (c < 2)
-  {
-    if (digitalRead(switchOne) == HIGH)
-    {
-      userTime[c] += 1;
-      if (userTime[c] == 60)
-      {
-        userTime[c] = 0;
-      }
-    }
-
-    if (digitalRead(switchTwo) == HIGH)
-    {
-      c += 1;
-    }
-
-    //print the userTime
-    delay (70);
-    timeResult = (userTime[0] * 100000) + (userTime[1] * 1000) + (userTime[2] * 10);
-    sendToClock(timeResult);
-  }
-
-  return userTime[0]; //DELETE AAA
-}
-unsigned int userInputTimeFormatted() {
-  int arr[2];
-  long timeResult = 0;
-  int c = 0;
-  while (c < 2)
+  long x = 0;
+  long y = 0;
+  long z = 0;
+  while (c < 3)
   {
     if (digitalRead(switchOne) == HIGH)
     {
       arr[c] += 1;
-      if (arr[c] == 60)
+      if (arr[c] > 59 && c > 0)
       {
         arr[c] = 0;
       }
-    }
+      if (arr[c] > 23 && c == 0)
+      {
+        arr[c] = 0;
+      }
+      
 
+
+    }
     if (digitalRead(switchTwo) == HIGH)
     {
       c += 1;
     }
 
     //print the userTime
-    delay (70);
-    timeResult = (arr[0] * 100000) + (arr[1] * 1000) + (arr[2] * 10);
+    delay (150);
+    timeResult = 0;
+    x = arr[0] * 100000;
+    y = arr[1] * 1000;
+    z = arr[2] * 10;
+    timeResult = x + y + z;
     sendToClock(timeResult);
   }
-    return timeResult;
+  return timeResult;
 }
 
 //function to Display Time
 void displayTime()
 {
   DateTime now = rtc.now();
-  int hourNow = now.hour();
-  int minuteNow = now.minute();
-  int secondNow = now.second();
+  long hourNow = now.hour();
+  long minuteNow = now.minute();
+  long secondNow = now.second();
   long timeNow = 0;
   timeNow = (hourNow * 100000) + (minuteNow * 1000) + (secondNow * 10);
   sendToClock(timeNow);
@@ -319,7 +304,7 @@ void displayDate()
 {
   DateTime now = rtc.now();
   long DateNow = 0;
-  DateNow = (now.day() * 100000) + (now.month() * 1000) + (now.year() * 10);
+  DateNow = (now.day() * 100000) + (now.month() * 1000) + (now.year()%100 * 10);
   //Serial.println(DateNow);
   sendToClock(DateNow);
 }
@@ -359,8 +344,8 @@ void settingsLoop() {
       {
         int b[2];
         int c[2];
-        b[0] = userInputTime(b[0]);
-        c[0] = userInputTime(c[0]);
+        //b[0] = userInputTime(b[0]);
+        //c[0] = userInputTime(c[0]);
 
         rtc.adjust(DateTime(c[2], c[1], c[0], b[0], b[1], b[2]));
       }
@@ -382,30 +367,12 @@ void settingsLoop() {
       }
     }
     //Setting 2: Temperature Mode
-    if (settingsPage == 2)
-    {
-      if (settingK == true)
-      {
-        sendToClock(2000016);
-      }
-      if (settingK)
-      {
-        sendToClock(2000006);
-      }
 
-      if (digitalRead(switchOne) == HIGH)
-      {
-        settingK = !settingK;
-      }
-
-      sendToClock(2000006);
-
-    }
     if (settingsPage == 3)
     {
       int distances[] = {5, 10, 50, 100, 200};
-         sendToClock((settingDistance * 10) + 2000006);
-         if (digitalRead(switchOne) == HIGH)
+      sendToClock((settingDistance * 10) + 2000006);
+      if (digitalRead(switchOne) == HIGH)
       {
         int v = 0;
         settingDistance = distances[v];
@@ -443,10 +410,10 @@ void checkAlarms()
   {
     notifyUser(3);
   }
-  if (timerTime == timeNow)
-  {
-    notifyUser(1);
-  }
+  //if (timerTime == now)
+  //{
+  //  notifyUser(1);
+  //}
 }
 
 //MAIN LOOP
@@ -461,13 +428,12 @@ void loop() {
       nowPage = 0;
     }
   }
-
-  //check alarm and timer
+  Serial.println(nowPage);
 
   //page to function
   if (nowPage == 0)
   {
-    if (settingMode = 0)
+    if (settingMode == 0)
     {
       long duration;
       int distance;
@@ -479,9 +445,14 @@ void loop() {
       digitalWrite(UsTrgPin, LOW);
       duration = pulseIn(UsEchPin, HIGH);
       distance = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back)
+      Serial.println(distance);
       if (distance < settingDistance)
       {
         displayTime();
+      }
+      else
+      {
+        sendBlankToClock();
       }
 
     }
@@ -497,39 +468,59 @@ void loop() {
     {
       displayTime();
     }
-
   }
+
   if (nowPage == 1)
   {
-    sendToClock(0000001);
+    displayDate();
   }
   if (nowPage == 2)
   {
+    if (digitalRead(switchOne) == HIGH)
+    {
+      settingK = !settingK;
+    }
     displayTemperature(settingK); //display Temp in C
   }
   if (nowPage == 3)
   {
-    sendToClock((bme.readPressure() * 10) + 3);
+    int a = bme.readPressure()/ 100.0F;
+    a *= 10;
+    a += 3;
+    sendToClock(a);
   }
   if (nowPage == 4)
-  {
-    sendToClock((bme.readAltitude(1013) * 10) + 4);
+  { 
+    int a = bme.readAltitude(1013);
+    a*= 10;
+    a += 4;
+    sendToClock(a);
   }
   if (nowPage == 5)
   {
-    sendToClock((bme.readHumidity() * 10) + 1);
+    int a = bme.readHumidity();
+    a *= 10;
+    a += 1;
+    sendToClock(a);
   }
   if (nowPage == 6)
   {
-    displayDate();
-  }
-  if (nowPage == 7)
-  {
-    sendToClock(alarmTime);
+   sendToClock(alarmTime);
 
     if (digitalRead(switchOne) == HIGH)
     {
+      delay(50);
       setAlarm();
+    }
+  }
+  if (nowPage == 7)
+  {
+    //displayTimer();
+
+    if (digitalRead(switchOne) == HIGH)
+    {
+      delay(50);
+      //setTimer();
     }
   }
   if (nowPage == 8)
@@ -541,5 +532,6 @@ void loop() {
     }
   }
 
-  delay(200);
-}
+
+  delay(300);
+  }
