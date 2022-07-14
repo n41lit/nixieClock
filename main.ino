@@ -94,6 +94,7 @@ void setup()
   settingK = false;
   settingMode = 0;
   settingDistance = 50;
+  alarmTime = 999999;
 
   //blink green for setup finish
   digitalWrite(ledGPin, HIGH);
